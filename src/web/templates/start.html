@@ -1,0 +1,40 @@
+{% extends "basis.html" %}
+{% block titel %}Übersicht{% endblock %}
+{% block inhalt %}
+<h1>Übersicht</h1>
+<p class="untertitel">Musterschutz GmbH · {{ wochentag }}, {{ heute.strftime("%d.%m.%Y") }}</p>
+<div class="kartenreihe">
+  <div class="karte"><div class="kennzahl">{{ kennzahlen.aktive_mitarbeiter }}</div>
+    <div class="kennzahl-label">aktive Mitarbeiter</div></div>
+  <div class="karte"><div class="kennzahl">{{ kennzahlen.kunden }}</div>
+    <div class="kennzahl-label">Kunden</div></div>
+  <div class="karte"><div class="kennzahl">{{ kennzahlen.objekte }}</div>
+    <div class="kennzahl-label">aktive Objekte</div></div>
+  <div class="karte"><div class="kennzahl">{{ kennzahlen.offene_schichten }}</div>
+    <div class="kennzahl-label">offene Schichten (M05-Stub)</div></div>
+  <div class="karte"><div class="kennzahl">{{ kennzahlen.lizenzen }}</div>
+    <div class="kennzahl-label">belegte Lizenzen</div></div>
+</div>
+
+<h2>Karteileichen &amp; Fristen</h2>
+<div class="karte">
+  {% if befristete %}
+  <p>Befristete Objekte mit Ablauf in den nächsten 90 Tagen:</p>
+  <ul>
+    {% for objekt in befristete %}
+    <li><a href="/app/objekte/{{ objekt.id }}">{{ objekt.objektnummer }} · {{ objekt.bezeichnung }}</a>
+      läuft am {{ objekt.einsatzende.strftime("%d.%m.%Y") }} aus</li>
+    {% endfor %}
+  </ul>
+  {% else %}<p>Keine auslaufenden Objekte in den nächsten 90 Tagen.</p>{% endif %}
+</div>
+
+<h2>Systemstand</h2>
+<div class="karte">
+  <dl class="paare">
+    <dt>Gebaute Module</dt><dd>Kernel (M00) · Personal (M01) · Kunde/Objekt (M02) · Tarif &amp; Entgelt (M04) · Regelengine (M06)</dd>
+    <dt>Über Stubs angebunden</dt><dd>Planung (M05) · Qualifikationen/Dokumente (M03)</dd>
+    <dt>Prüfbericht</dt><dd>PLAUSIBILITAETSPRUEFUNG.md im Repository</dd>
+  </dl>
+</div>
+{% endblock %}

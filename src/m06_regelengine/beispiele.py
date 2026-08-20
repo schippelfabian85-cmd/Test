@@ -37,9 +37,13 @@ def utc(jahr: int, monat: int, tag: int, stunde: int, minute: int = 0) -> dateti
 
 
 def schicht(nr: int, beginn: datetime, ende: datetime, pause: int = 30,
-            objekt: int = 1) -> SchichtDTO:
-    return SchichtDTO(id=schicht_id(nr), objekt_id=objekt_id(objekt),
-                      beginn_utc=beginn, ende_utc=ende, pause_minuten=pause)
+            objekt: int = 1, mitarbeiter: int = 1) -> SchichtDTO:
+    return SchichtDTO(
+        id=schicht_id(nr), tenant_id=TENANT, objekt_id=objekt_id(objekt),
+        mitarbeiter_id=mitarbeiter_id(mitarbeiter), subunternehmer_id=None,
+        beginn_utc=beginn, ende_utc=ende, pause_minuten=pause,
+        funktion_code="WACH", zustand="GEPLANT", schichtkuerzel="T",
+    )
 
 
 VOLLZEIT = VertragsgrenzenDTO(

@@ -1,0 +1,50 @@
+{% extends "basis.html" %}
+{% block titel %}Mitarbeiter{% endblock %}
+{% block inhalt %}
+<h1>Mitarbeiterliste</h1>
+<form class="filter" method="get" action="/app/mitarbeiter">
+  <label class="feld">Status
+    <select name="status">
+      <option value="">alle</option>
+      {% for s in ["BEWERBER","AKTIV","RUHEND","AUSGESCHIEDEN","ANONYMISIERT"] %}
+      <option value="{{ s }}" {{ 'selected' if status == s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="feld">Funktion
+    <select name="funktion">
+      <option value="">alle</option>
+      {% for f in funktionen %}
+      <option value="{{ f.code }}" {{ 'selected' if funktion == f.code }}>{{ f.bezeichnung }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="feld">Suche
+    <input type="search" name="text" value="{{ text or '' }}" placeholder="Name oder Personalnummer">
+  </label>
+  <button type="submit">Filtern</button>
+  <a class="knopf leise" href="/api/v1/personal/mitarbeiter.csv">CSV-Export</a>
+  {% if ktx.hat_rolle("ADMIN", "PLANER") %}
+  <a class="knopf" href="/app/mitarbeiter/neu">Neuanlage</a>
+  {% endif %}
+</form>
+<div class="tabelle-huelle">
+<table class="daten">
+  <tr><th>Personalnr.</th><th>Name</th><th>Status</th><th>Vertrag</th>
+      <th>Funktionen</th><th>Eintritt</th><th>Austritt</th></tr>
+  {% for zeile in mitarbeiter %}
+  <tr>
+    <td>{{ zeile.ma.personalnummer }}</td>
+    <td><a href="/app/mitarbeiter/{{ zeile.ma.id }}">{{ zeile.ma.nachname }}, {{ zeile.ma.vorname }}</a></td>
+    <td><span class="pille {{ 'aktiv' if zeile.ma.status == 'AKTIV' else 'inaktiv' if zeile.ma.status in ('AUSGESCHIEDEN','ANONYMISIERT') else 'warnung' }}">{{ zeile.ma.status }}</span></td>
+    <td>{{ zeile.vertragstyp }}</td>
+    <td>{{ ", ".join(zeile.funktionen) }}</td>
+    <td>{{ zeile.ma.eintrittsdatum.strftime("%d.%m.%Y") }}</td>
+    <td>{{ zeile.ma.austrittsdatum.strftime("%d.%m.%Y") if zeile.ma.austrittsdatum else "—" }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7">Keine Treffer für die gewählten Filter.</td></tr>
+  {% endfor %}
+</table>
+</div>
+{% endblock %}

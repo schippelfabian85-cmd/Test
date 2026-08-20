@@ -1,0 +1,40 @@
+{% extends "basis.html" %}
+{% block titel %}Mitarbeiter anlegen{% endblock %}
+{% block inhalt %}
+<h1>Neuanlage Mitarbeiter</h1>
+<p class="untertitel">Pflichtfelder: Personalnummer, Name, Vorname, Geburtsdatum, Land, Eintrittsdatum, Vertragstyp, mindestens eine Funktion (M01 R-02).</p>
+<form method="post" action="/app/mitarbeiter/neu">
+  <div class="karte">
+    <div class="formular-raster">
+      <label class="feld">Personalnummer *<input name="personalnummer" required value="{{ werte.personalnummer or '' }}"></label>
+      <label class="feld">Nachname *<input name="nachname" required value="{{ werte.nachname or '' }}"></label>
+      <label class="feld">Vorname *<input name="vorname" required value="{{ werte.vorname or '' }}"></label>
+      <label class="feld">Geburtsdatum *<input type="date" name="geburtsdatum" required value="{{ werte.geburtsdatum or '' }}"></label>
+      <label class="feld">Land *<input name="land" required value="{{ werte.land or 'Deutschland' }}"></label>
+      <label class="feld">Eintrittsdatum *<input type="date" name="eintrittsdatum" required value="{{ werte.eintrittsdatum or '' }}"></label>
+      <label class="feld">Vertragstyp *
+        <select name="vertragstyp_id" required>
+          {% for vt in vertragstypen %}
+          <option value="{{ vt.id }}" {{ 'selected' if werte.vertragstyp_id == vt.id|string }}>{{ vt.code }} v{{ vt.version }} — {{ vt.bezeichnung }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="feld">Funktionen * (Mehrfachauswahl)
+        <select name="funktion_codes" multiple size="4">
+          {% for f in funktionen %}
+          <option value="{{ f.code }}" {{ 'selected' if f.code in (werte.funktion_codes or []) }}>{{ f.bezeichnung }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="feld">Straße<input name="strasse" value="{{ werte.strasse or '' }}"></label>
+      <label class="feld">PLZ<input name="plz" value="{{ werte.plz or '' }}"></label>
+      <label class="feld">Ort<input name="ort" value="{{ werte.ort or '' }}"></label>
+      <label class="feld">E-Mail<input type="email" name="email" value="{{ werte.email or '' }}"></label>
+    </div>
+    <div class="aktionen">
+      <button type="submit">Anlegen</button>
+      <a class="knopf leise" href="/app/mitarbeiter">Abbrechen</a>
+    </div>
+  </div>
+</form>
+{% endblock %}

@@ -1,31 +1,52 @@
 # Branchenlösung Sicherheitsgewerbe
 
-Modulare Umsetzung nach den Spezifikationen `M01`–`M20` in diesem Repository.
-Die Spezifikationen wurden vor Baubeginn geprüft und korrigiert — Befunde und
-Begründungen in [`PLAUSIBILITAETSPRUEFUNG.md`](PLAUSIBILITAETSPRUEFUNG.md).
+Modulare Umsetzung nach den Spezifikationen `00_KERNEL.md` und `M01`–`M20` in
+diesem Repository. Die Spezifikationen wurden vor Baubeginn geprüft und
+korrigiert — Befunde in [`PLAUSIBILITAETSPRUEFUNG.md`](PLAUSIBILITAETSPRUEFUNG.md).
+
+## Schnellstart
+
+```bash
+pip install fastapi uvicorn sqlalchemy jinja2 python-multipart pytest httpx
+PYTHONPATH=src python3 -m uvicorn app:erstelle_app --factory --port 8000
+```
+
+Danach: <http://localhost:8000/app> — Entwicklungszugänge (Seed, K-12):
+
+| E-Mail | Rolle | Passwort |
+|---|---|---|
+| admin@musterschutz.example | ADMIN | musterschutz! |
+| disposition@musterschutz.example | PLANER | musterschutz! |
+| controlling@musterschutz.example | CONTROLLER | musterschutz! |
+| objektleitung@musterschutz.example | OL (nur eigener Bereich) | musterschutz! |
+
+REST-API unter `/api/v1/…` (OpenAPI: `/docs`), Anmeldung über
+`POST /api/v1/auth/token`. **Produktion:** `DATABASE_URL` (PostgreSQL 16) und
+`JWT_SECRET` setzen, `migrationen/postgres_rls.sql` einspielen.
+
+```bash
+python3 -m pytest        # 108 Tests: Akzeptanzkriterien M01/M02/M04/M06 + Kernel + UI
+```
 
 ## Stand der Umsetzung
 
 | Baustein | Status | Inhalt |
 |---|---|---|
-| `src/kernel/` | provisorisch | Gemeinsame DTOs (`SchichtDTO`, `VertragsgrenzenDTO`, Verstoß-Stufen). `00_KERNEL.md` liegt noch nicht vor — beim Eintreffen gegen dessen Definitionen abgleichen. |
-| `src/m06_regelengine/` | **fertig** | Alle 18 Regeln des Auslieferungskatalogs, Ausnahmen mit Begründung/Genehmiger (R-02), Übersteuerung nur ADMIN mit Protokoll (R-03), Verstoßtexte für Disponenten (R-04), `PruefKontext`-Beispiele als Test-Stub (Abschnitt 9). |
-| `src/m04_entgelt/` | Kern fertig | Minutengenaue Segmentzerlegung (R-01) mit Priorität/Kumulierung/Verdrängung (R-02) und Zeitumstellung (R-10). Noch offen: `berechne_lohn()`/`berechne_umsatz()` auf Basis der Segmente, Tarif-/Maskenverwaltung (Muster A), Mindestlohnanhebung (R-06). |
+| `src/kernel/` | **fertig** (M00) | Mandanten, Benutzer/Rollen/JWT, Audit (K-4), Outbox-Events (§8), Nummernkreise, Muster A (§4), Idempotenz/409 (§9), ZustaendigkeitPort (K-8), Fehlerformat. Abweichungen: `src/kernel/README.md` |
+| `src/m01_personal/` | **fertig** | Personalakte mit R-01–R-08, Vertragstypen (Muster A, stichtagsgenau), Statusautomat, Austritt/Lizenzfreigabe, Anonymisierung, Historie, `MitarbeiterPortV1` + Stub, REST + Oberfläche |
+| `src/m02_kunde_objekt/` | **fertig** | Kunden-/Objektakte mit R-01–R-08, Freigaben, Dienstanweisungs-Versionen, Objektzuschläge (Muster A), Wiedervorlagen-Lauf, `ObjektPortV1`/`KundePortV1`, REST + Oberfläche |
+| `src/m04_entgelt/` | **fertig** | Segmentzerlegung (R-01/R-02/R-10), Lohn-/Umsatzberechnung mit Tarifversionen, Mindestlohnanhebung (R-06), Verrechnungssätze inkl. ANTEILIG, Feiertage je Bundesland, `EntgeltPortV1` + Stub, Probe-Rechner |
+| `src/m06_regelengine/` | **fertig** | Alle 18 Katalogregeln, Ausnahmen, Übersteuerung mit Protokoll, `PruefKontext`-Beispiele |
+| `src/stubs/` | Stubs (K-2) | `SchichtLookupPort` (M05 §10: 4 Seed-Wochen), `DokumentPort`/`WiedervorlagePort` (M03) |
+| `src/web/` | **fertig** | Anmeldung, Übersicht, Mitarbeiterliste/-akte/Neuanlage (mit CSV-Export), Kunden- und Objektakten, Tarifübersicht, Probe-Rechner |
 
-Baureihenfolge folgt den Spezifikationen: M06 zuerst (M06 §10 — isoliert baubar,
-alle Planungsmodule bauen darauf auf), danach der Rechenkern aus M04 §10.
-Als Nächstes: Vervollständigung M04, dann M01/M02 mit den Port-Stubs für Phase 1.
+Noch nicht gebaut: M03, M05, M07–M20 (Anschluss über die vorhandenen Ports).
+Sinnvolle nächste Schritte laut Kernel §12: M03/M07, dann M05.
 
-## Entwicklung
+## Konventionen (aus dem Kernel)
 
-```bash
-pip install pytest
-python -m pytest
-```
-
-Konventionen aus den Spezifikationen, die überall gelten:
-
-- Zeitstempel in UTC, Kalenderlogik in `Europe/Berlin`
-- Beträge in Cent, Dauern in Minuten, Rundung erst am Ende
-- Fehlercodes `MXX-E-NNN`, Verstoß-Stufen `BLOCKIEREND | WARNUNG | HINWEIS`
-- Seed-IDs: Mitarbeiter `11111111-…`, Objekte `22222222-…`
+- Kein Modul liest fremde Tabellen — nur Ports und Events (K-1)
+- Zeitstempel UTC, Kalenderlogik `Europe/Berlin` (K-7: Nachtschicht → Starttag)
+- Beträge in Cent, Dauern in Minuten, Rundung erst am Ende (M04 R-09)
+- Fehlercodes `MXX-E-NNN`; fachliche Fehler nie HTTP 500 (§9)
+- Seed-IDs: Mitarbeiter `11111111-…`, Objekte `22222222-…`, Schichten `55555555-…`

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titel %}Musterschutz{% endblock %} · Musterschutz</title>
+  <link rel="stylesheet" href="/static/stil.css">
+</head>
+<body>
+{% if ktx %}
+<header class="haupt">
+  <span class="marke">Musterschutz</span>
+  <nav>
+    <a href="/app" class="{{ 'aktiv' if bereich == 'start' }}">Übersicht</a>
+    <a href="/app/mitarbeiter" class="{{ 'aktiv' if bereich == 'personal' }}">Personal</a>
+    <a href="/app/kunden" class="{{ 'aktiv' if bereich == 'kunden' }}">Kunden</a>
+    <a href="/app/objekte" class="{{ 'aktiv' if bereich == 'objekte' }}">Objekte</a>
+    <a href="/app/tarife" class="{{ 'aktiv' if bereich == 'tarife' }}">Tarif &amp; Entgelt</a>
+    <a href="/app/proberechner" class="{{ 'aktiv' if bereich == 'probe' }}">Probe-Rechner</a>
+  </nav>
+  <span class="benutzer">{{ ", ".join(ktx.rollen|sort) }} · <a href="/app/abmelden">Abmelden</a></span>
+</header>
+{% endif %}
+<main>
+  {% if meldung %}<div class="meldung erfolg">{{ meldung }}</div>{% endif %}
+  {% if fehler %}<div class="meldung fehler"><span class="code">{{ fehler.code }}</span> — {{ fehler.message }}
+    {% if fehler.details %}<div class="code">{{ fehler.details }}</div>{% endif %}</div>{% endif %}
+  {% block inhalt %}{% endblock %}
+</main>
+</body>
+</html>

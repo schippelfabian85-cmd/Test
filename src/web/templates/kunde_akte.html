@@ -1,0 +1,54 @@
+{% extends "basis.html" %}
+{% block titel %}{{ kunde.firmenname }}{% endblock %}
+{% block inhalt %}
+<h1>{{ kunde.firmenname }}</h1>
+<p class="untertitel">Kundennummer {{ kunde.kundennummer }} · {{ kunde.rechtsform or "" }}</p>
+
+<div class="kartenreihe">
+  <div class="karte">
+    <h2 style="margin-top:0">Stammdaten</h2>
+    <dl class="paare">
+      <dt>Anschrift</dt><dd>{{ kunde.strasse or "—" }}, {{ kunde.plz or "" }} {{ kunde.ort or "" }}</dd>
+      <dt>USt-IdNr.</dt><dd>{{ kunde.ust_id or "—" }}</dd>
+      <dt>Leitweg-ID</dt><dd>{{ kunde.leitweg_id or "— (nur B2G erforderlich)" }}</dd>
+      <dt>Kunde seit</dt><dd>{{ kunde.eintrittsdatum.strftime("%d.%m.%Y") if kunde.eintrittsdatum else "—" }}</dd>
+    </dl>
+  </div>
+  <div class="karte">
+    <h2 style="margin-top:0">Zahlungsmodalitäten</h2>
+    <dl class="paare">
+      <dt>Zahlungsziel</dt><dd>{{ kunde.zahlungsziel_tage }} Tage</dd>
+      <dt>Skonto</dt><dd>{% if kunde.skonto_prozent %}{{ kunde.skonto_prozent }} % bei {{ kunde.skonto_tage }} Tagen{% else %}—{% endif %}</dd>
+      <dt>Rechnungsversand</dt><dd>{{ kunde.rechnungsversand }}</dd>
+      <dt>Verdichtung</dt><dd>{{ kunde.rechnung_verdichtung }} (M11 R-05)</dd>
+    </dl>
+  </div>
+</div>
+
+<h2>Ansprechpartner</h2>
+<div class="tabelle-huelle">
+<table class="daten">
+  <tr><th>Name</th><th>Funktion</th><th>E-Mail</th><th>Kennzeichen</th></tr>
+  {% for ap in ansprechpartner %}
+  <tr><td>{{ ap.anrede or "" }} {{ ap.name }}</td><td>{{ ap.funktion or "—" }}</td>
+      <td>{{ ap.email or "—" }}</td>
+      <td>{% if ap.ist_hauptkontakt %}<span class="pille neutral">Hauptkontakt</span>{% endif %}
+          {% if ap.erhaelt_rechnung %}<span class="pille neutral">Rechnung</span>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="4">Keine Ansprechpartner hinterlegt.</td></tr>
+  {% endfor %}
+</table>
+</div>
+
+<h2>Objekte</h2>
+<div class="tabelle-huelle">
+<table class="daten">
+  <tr><th>Objektnr.</th><th>Bezeichnung</th><th>Ort</th><th>Status</th></tr>
+  {% for o in objekte %}
+  <tr><td>{{ o.objektnummer }}</td>
+      <td><a href="/app/objekte/{{ o.id }}">{{ o.bezeichnung }}</a></td>
+      <td>{{ o.ort or "—" }}</td>
+      <td><span class="pille {{ 'aktiv' if o.aktiv else 'inaktiv' }}">{{ "aktiv" if o.aktiv else "inaktiv" }}</span></td></tr>
+  {% endfor %}
+</table>
+</div>
+{% endblock %}

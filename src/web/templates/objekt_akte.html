@@ -1,0 +1,87 @@
+{% extends "basis.html" %}
+{% block titel %}{{ objekt.bezeichnung }}{% endblock %}
+{% block inhalt %}
+<h1>{{ objekt.bezeichnung }}
+  <span class="pille {{ 'aktiv' if objekt.aktiv else 'inaktiv' }}">{{ "aktiv" if objekt.aktiv else "inaktiv" }}</span></h1>
+<p class="untertitel">Objektnummer {{ objekt.objektnummer }} · Kunde
+  <a href="/app/kunden/{{ kunde.id }}">{{ kunde.firmenname }}</a></p>
+
+<div class="kartenreihe">
+  <div class="karte">
+    <h2 style="margin-top:0">Stammdaten</h2>
+    <dl class="paare">
+      <dt>Anschrift</dt><dd>{{ objekt.strasse or "—" }}, {{ objekt.plz or "" }} {{ objekt.ort or "" }}</dd>
+      <dt>Bundesland</dt><dd>{{ objekt.bundesland }} (maßgeblich für Feiertagszuschläge, M04 R-07)</dd>
+      <dt>Koordinaten</dt><dd>{% if objekt.latitude %}{{ objekt.latitude }}, {{ objekt.longitude }}
+        · Geofence {{ objekt.geofence_radius_meter }} m{% else %}— (für GPS-Erfassung erforderlich, R-04){% endif %}</dd>
+      <dt>Einsatzzeitraum</dt><dd>{{ objekt.einsatzbeginn.strftime("%d.%m.%Y") }} –
+        {{ objekt.einsatzende.strftime("%d.%m.%Y") if objekt.einsatzende else "unbefristet" }}</dd>
+      <dt>Vor Ort</dt><dd>{{ objekt.ansprechpartner_vor_ort or "—" }} {{ objekt.telefon_vor_ort or "" }}</dd>
+    </dl>
+    {% if ktx.hat_rolle("ADMIN", "PLANER") and objekt.aktiv %}
+    <form method="post" action="/app/objekte/{{ objekt.id }}/deaktivierung" class="aktionen"
+          onsubmit="return confirm('Objekt wirklich deaktivieren?')">
+      <button type="submit" class="gefahr">Deaktivieren</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="karte">
+    <h2 style="margin-top:0">Objektzuschläge (Muster A)</h2>
+    <table class="daten">
+      <tr><th>Bezeichnung</th><th>Art</th><th>Wert</th><th>Version</th><th>Gültig</th></tr>
+      {% for z in zuschlaege %}
+      <tr><td>{{ z.bezeichnung }}</td><td>{{ z.art }}</td>
+          <td class="zahl">{% if z.art == "PROZENT" %}{{ z.wert }} %{% else %}{{ "%.2f"|format(z.wert / 100) }} €{% endif %}</td>
+          <td class="zahl">v{{ z.version }}</td>
+          <td>{{ z.gueltig_ab.strftime("%d.%m.%y") }} – {{ z.gueltig_bis.strftime("%d.%m.%y") if z.gueltig_bis else "offen" }}</td></tr>
+      {% else %}<tr><td colspan="5">Keine Objektzuschläge definiert.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+<h2>Freigaben — wer darf hier eingesetzt werden (R-05)</h2>
+<div class="tabelle-huelle">
+<table class="daten">
+  <tr><th>Mitarbeiter</th><th>Freigabe ab</th><th>Freigabe bis</th><th>Stammkraft</th></tr>
+  {% for f in freigaben %}
+  <tr><td><a href="/app/mitarbeiter/{{ f.mitarbeiter_id }}">{{ f.name }}</a></td>
+      <td>{{ f.freigabe_ab.strftime("%d.%m.%Y") }}</td>
+      <td>{{ f.freigabe_bis.strftime("%d.%m.%Y") if f.freigabe_bis else "unbefristet" }}</td>
+      <td>{% if f.ist_stammkraft %}<span class="pille neutral">Stammkraft</span>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="4">Keine Freigaben — an diesem Objekt kann niemand eingeplant werden.</td></tr>
+  {% endfor %}
+</table>
+</div>
+{% if ktx.hat_rolle("ADMIN", "PLANER") %}
+<div class="karte">
+  <form method="post" action="/app/objekte/{{ objekt.id }}/freigaben" class="filter">
+    <label class="feld">Mitarbeiter
+      <select name="mitarbeiter_id">
+        {% for m in alle_mitarbeiter %}
+        <option value="{{ m.id }}">{{ m.nachname }}, {{ m.vorname }} ({{ m.personalnummer }})</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="feld">Ab<input type="date" name="freigabe_ab" required></label>
+    <label class="feld">Bis (leer = unbefristet)<input type="date" name="freigabe_bis"></label>
+    <label class="feld">Stammkraft
+      <select name="ist_stammkraft"><option value="">nein</option><option value="ja">ja</option></select>
+    </label>
+    <button type="submit">Freigabe erteilen</button>
+  </form>
+</div>
+{% endif %}
+
+<h2>Dienstanweisungen</h2>
+<div class="tabelle-huelle">
+<table class="daten">
+  <tr><th>Titel</th><th>Version</th><th>Bestätigungspflicht</th></tr>
+  {% for d in dienstanweisungen %}
+  <tr><td>{{ d.titel }}</td><td class="zahl">v{{ d.version }}</td>
+      <td>{{ "ja" if d.bestaetigung_erforderlich else "nein" }}</td></tr>
+  {% else %}<tr><td colspan="3">Keine Dienstanweisungen.</td></tr>
+  {% endfor %}
+</table>
+</div>
+{% endblock %}

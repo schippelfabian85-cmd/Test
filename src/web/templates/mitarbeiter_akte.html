@@ -1,0 +1,101 @@
+{% extends "basis.html" %}
+{% block titel %}{{ ma.nachname }}, {{ ma.vorname }}{% endblock %}
+{% block inhalt %}
+<h1>{{ ma.nachname }}, {{ ma.vorname }}
+  <span class="pille {{ 'aktiv' if ma.status == 'AKTIV' else 'inaktiv' if ma.status in ('AUSGESCHIEDEN','ANONYMISIERT') else 'warnung' }}">{{ ma.status }}</span></h1>
+<p class="untertitel">Personalnummer {{ ma.personalnummer }} · Version {{ ma.version }}</p>
+
+<div class="reiter">
+  {% for r, label in [("stammdaten","Stammdaten"),("vertrag","Vertragsdaten"),("funktionen","Funktionen"),("historie","Historie")] %}
+  <a href="?reiter={{ r }}" class="{{ 'aktiv' if reiter == r }}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{% if reiter == "stammdaten" %}
+<div class="karte">
+  <dl class="paare">
+    <dt>Geburtsdatum</dt><dd>{{ ma.geburtsdatum.strftime("%d.%m.%Y") }}</dd>
+    <dt>Anschrift</dt><dd>{{ ma.strasse or "—" }}, {{ ma.plz or "" }} {{ ma.ort or "" }} ({{ ma.land }})</dd>
+    <dt>E-Mail</dt><dd>{{ ma.email or "—" }}</dd>
+    <dt>Telefon</dt><dd>{{ ma.telefon or ma.mobil or "—" }}</dd>
+    <dt>Eintritt</dt><dd>{{ ma.eintrittsdatum.strftime("%d.%m.%Y") }}</dd>
+    <dt>Austritt</dt><dd>{{ ma.austrittsdatum.strftime("%d.%m.%Y") if ma.austrittsdatum else "—" }}
+      {% if ma.austrittsgrund %}({{ ma.austrittsgrund }}){% endif %}</dd>
+  </dl>
+</div>
+{% if ktx.hat_rolle("ADMIN") and ma.status not in ("ANONYMISIERT",) %}
+<h2>Verwaltung</h2>
+<div class="karte">
+  <form method="post" action="/app/mitarbeiter/{{ ma.id }}/austritt" class="filter">
+    <label class="feld">Austrittsdatum<input type="date" name="austrittsdatum" required></label>
+    <label class="feld">Grund<input name="grund" placeholder="z. B. Eigenkündigung"></label>
+    <button type="submit" class="gefahr">Austritt setzen</button>
+  </form>
+  {% if ma.status == "AUSGESCHIEDEN" %}
+  <form method="post" action="/app/mitarbeiter/{{ ma.id }}/anonymisierung" class="filter"
+        onsubmit="return confirm('Anonymisierung ist unwiderruflich. Wirklich fortfahren?')">
+    <label class="feld">Zweite Bestätigung
+      <select name="bestaetigung"><option value="">nein</option><option value="ja">ja, endgültig</option></select>
+    </label>
+    <button type="submit" class="gefahr">Anonymisieren</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
+{% elif reiter == "vertrag" %}
+<div class="karte">
+  <dl class="paare">
+    <dt>Vertragstyp heute</dt><dd>{{ vertragstyp.code }} v{{ vertragstyp.version }} — {{ vertragstyp.bezeichnung }} ({{ vertragstyp.kategorie }})</dd>
+    <dt>Sollstunden/Monat</dt><dd>{{ vertragstyp.soll_stunden_monat }} h</dd>
+    <dt>Höchststunden</dt><dd>{{ vertragstyp.max_stunden_monat or "—" }} h</dd>
+    <dt>Verdienstgrenze</dt><dd>{% if vertragstyp.max_verdienst_monat_cent %}{{ "%.2f"|format(vertragstyp.max_verdienst_monat_cent / 100) }} €{% else %}—{% endif %}</dd>
+    <dt>Max. Einsatztage/Jahr</dt><dd>{{ vertragstyp.max_einsatztage_jahr or "—" }}</dd>
+    <dt>Urlaubstage/Jahr</dt><dd>{{ vertragstyp.urlaubstage_jahr }}</dd>
+    <dt>Minderjährig (heute)</dt><dd>{{ "ja" if grenzen.ist_minderjaehrig else "nein" }}</dd>
+  </dl>
+</div>
+{% if ktx.hat_rolle("ADMIN", "PLANER") and ma.status != "ANONYMISIERT" %}
+<h2>Vertragstyp wechseln</h2>
+<div class="karte">
+  <form method="post" action="/app/mitarbeiter/{{ ma.id }}/vertragstyp" class="filter">
+    <label class="feld">Neuer Vertragstyp
+      <select name="vertragstyp_id">
+        {% for vt in vertragstypen if vt.aktiv %}
+        <option value="{{ vt.id }}">{{ vt.code }} v{{ vt.version }} — {{ vt.bezeichnung }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="feld">Stichtag<input type="date" name="stichtag" required></label>
+    <button type="submit">Wechseln</button>
+  </form>
+  <p class="fussnote">Die Abrechnung fragt später stichtagsgenau: „Welcher Vertrag galt am …?" (M01 AC 3).</p>
+</div>
+{% endif %}
+
+{% elif reiter == "funktionen" %}
+<div class="tabelle-huelle">
+<table class="daten">
+  <tr><th>Funktion</th><th>Hauptfunktion</th><th>Gültig ab</th></tr>
+  {% for f in funktionen_zeilen %}
+  <tr><td>{{ f.bezeichnung }} ({{ f.code }})</td>
+      <td>{{ "ja" if f.haupt else "" }}</td>
+      <td>{{ f.gueltig_ab.strftime("%d.%m.%Y") if f.gueltig_ab else "—" }}</td></tr>
+  {% endfor %}
+</table>
+</div>
+
+{% else %}
+<div class="tabelle-huelle">
+<table class="daten">
+  <tr><th>Zeitpunkt</th><th>Feld</th><th>Alt</th><th>Neu</th></tr>
+  {% for h in historie %}
+  <tr><td>{{ h.zeitpunkt.strftime("%d.%m.%Y %H:%M") }}</td><td>{{ h.feld }}</td>
+      <td>{{ h.alt or "—" }}</td><td>{{ h.neu or "—" }}</td></tr>
+  {% else %}
+  <tr><td colspan="4">Keine Historieneinträge.</td></tr>
+  {% endfor %}
+</table>
+</div>
+{% endif %}
+{% endblock %}

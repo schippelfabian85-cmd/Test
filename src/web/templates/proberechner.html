@@ -1,0 +1,78 @@
+{% extends "basis.html" %}
+{% block titel %}Probe-Rechner{% endblock %}
+{% block inhalt %}
+<h1>Rechner zur Probe</h1>
+<p class="untertitel">Schicht eingeben, vollständige Aufschlüsselung sehen — Lohn und Umsatz (M04 §6). Zeiten in lokaler Zeit Europe/Berlin.</p>
+
+<form method="post" action="/app/proberechner">
+  <div class="karte">
+    <div class="formular-raster">
+      <label class="feld">Mitarbeiter
+        <select name="mitarbeiter_id">
+          {% for m in mitarbeiter %}
+          <option value="{{ m.id }}" {{ 'selected' if werte.mitarbeiter_id == m.id|string }}>{{ m.nachname }}, {{ m.vorname }} ({{ m.personalnummer }})</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="feld">Objekt
+        <select name="objekt_id">
+          {% for o in objekte %}
+          <option value="{{ o.id }}" {{ 'selected' if werte.objekt_id == o.id|string }}>{{ o.objektnummer }} — {{ o.bezeichnung }} ({{ o.bundesland }})</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="feld">Funktion
+        <select name="funktion_code">
+          {% for f in funktionen %}
+          <option value="{{ f.code }}" {{ 'selected' if werte.funktion_code == f.code }}>{{ f.bezeichnung }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="feld">Datum<input type="date" name="datum" required value="{{ werte.datum or '' }}"></label>
+      <label class="feld">Beginn<input type="time" name="beginn" required value="{{ werte.beginn or '22:00' }}"></label>
+      <label class="feld">Ende<input type="time" name="ende" required value="{{ werte.ende or '06:00' }}"></label>
+      <label class="feld">Pause (Minuten)<input type="number" name="pause" min="0" value="{{ werte.pause or 45 }}"></label>
+    </div>
+    <div class="aktionen"><button type="submit">Berechnen</button></div>
+    <p class="fussnote">Endet die Schicht vor dem Beginn, wird sie als Nachtschicht über Mitternacht gewertet (Kernel K-7: Zuordnung zum Starttag).</p>
+  </div>
+</form>
+
+{% if ergebnis %}
+<h2>Lohn — {{ "%.2f"|format(ergebnis.lohn.summe_cent / 100) }} € bei {{ ergebnis.lohn.bezahlte_minuten }} bezahlten Minuten</h2>
+{% for hinweis in ergebnis.lohn.hinweise %}
+<div class="meldung fehler">{{ hinweis }}</div>
+{% endfor %}
+<div class="tabelle-huelle">
+<table class="daten">
+  <tr><th>Lohnart</th><th>Bezeichnung</th><th>Minuten</th><th>Satz</th><th>Betrag</th></tr>
+  {% for p in ergebnis.lohn.positionen %}
+  <tr><td>{{ p.lohnart_nummer }}</td><td>{{ p.bezeichnung }}</td>
+      <td class="zahl">{{ p.minuten }}</td>
+      <td class="zahl">{{ "%.2f"|format(p.satz_cent / 100) }} €/h</td>
+      <td class="zahl">{{ "%.2f"|format(p.betrag_cent / 100) }} €</td></tr>
+  {% endfor %}
+  <tr><td colspan="4"><strong>Summe</strong></td>
+      <td class="zahl"><strong>{{ "%.2f"|format(ergebnis.lohn.summe_cent / 100) }} €</strong></td></tr>
+</table>
+</div>
+
+{% if ergebnis.umsatz %}
+<h2>Umsatz — {{ "%.2f"|format(ergebnis.umsatz.summe_netto_cent / 100) }} € netto</h2>
+<div class="tabelle-huelle">
+<table class="daten">
+  <tr><th>Position</th><th>Minuten</th><th>Satz</th><th>Betrag</th></tr>
+  {% for p in ergebnis.umsatz.positionen %}
+  <tr><td>{{ p.bezeichnung }}</td>
+      <td class="zahl">{{ p.minuten }}</td>
+      <td class="zahl">{{ "%.2f"|format(p.satz_cent / 100) }} €/h</td>
+      <td class="zahl">{{ "%.2f"|format(p.betrag_cent / 100) }} €</td></tr>
+  {% endfor %}
+  <tr><td colspan="3"><strong>Summe netto</strong></td>
+      <td class="zahl"><strong>{{ "%.2f"|format(ergebnis.umsatz.summe_netto_cent / 100) }} €</strong></td></tr>
+</table>
+</div>
+<p class="fussnote">Deckungsbeitrag der Schicht: {{ "%.2f"|format((ergebnis.umsatz.summe_netto_cent - ergebnis.lohn.summe_cent) / 100) }} € (ohne Nebenkosten).</p>
+{% endif %}
+{% endif %}
+{% endblock %}
