@@ -98,13 +98,27 @@ Regeln, die so wie spezifiziert nicht implementierbar waren, weil das nötige Fe
 
 ---
 
-## 6. Offene Punkte — nur gegen fehlende Dokumente prüfbar
+## 6. Offene Punkte — Stand nach Eintreffen von 00_KERNEL, M05, M13
 
-1. **Kernel-Zustandsautomat (00_KERNEL.md §5):** Bestätigen, dass die Schichtzustände `ERFASST`, `GEPRUEFT`, `ABGEGLICHEN`, `AUSGEFALLEN` existieren und das M08-Mapping (K-03) stimmt.
-2. **`SchichtDTO` (Kernel):** M06 braucht daraus mindestens Beginn/Ende (UTC) und Pausenminuten.
-3. **M05:** `SchichtLookupPort`-Signaturen, Masterschichten, Umsetzung von `m07.krankmeldung.erfasst.v1` → `AUSGEFALLEN`, Schichtbezug für M20 (D-19).
-4. **`benutzer`/Lizenzzähler und `ZustaendigkeitPort` (Kernel):** referenziert von M01 AC 5, M01/M12-Lizenzlogik, M02/M12-Berechtigungen.
-5. **M14/M16:** Wachbuch-/WKS-Lesezugriff für M19, Benachrichtigungsversand für M08 R-05 und M20 R-08.
+Am 20.08.2026 wurden `00_KERNEL.md`, `M05_Planung.md` und `M13_Ressourcen_Inventar.md` nachgereicht. Verifikationsergebnis der offenen Punkte:
+
+1. **Kernel-Zustandsautomat — bestätigt.** `ERFASST`, `GEPRUEFT`, `ABGEGLICHEN`, `AUSGEFALLEN` existieren wie angenommen; das K-03-Mapping (M08 `VOLLSTAENDIG` ⇒ Kernel `ERFASST`) passt. Klarstellung aus Kernel §5: den Schichtzustand `GEPRUEFT` setzt **M09**, M08s gleichnamiger Erfassungsstatus bleibt davon getrennt.
+2. **`SchichtDTO` — bestätigt** (Kernel §7): enthält Beginn/Ende (UTC) und Pausenminuten plus `funktion_code`, `zustand`, `schichtkuerzel`. Das provisorische Kernel-Paket wurde auf die vollständige Form gebracht.
+3. **M05 — bestätigt:** `SchichtLookupPortV1` mit `offene_schichten()` und `setze_zustand()`; Krankmeldungs-Umsetzung (M07 → `AUSGEFALLEN`) liegt wie angenommen bei M05. **D-19 bestätigt sich:** `schicht.objekt_id` ist Pflicht — der Veranstaltungs-Abrechnungspfad (M20) braucht die dokumentierte Entscheidung.
+4. **Lizenzzähler/`ZustaendigkeitPort` — bestätigt:** `benutzer.lizenztyp` existiert; der Port gehört zu M00. Der Kernel definiert allerdings keine Tabelle für Zuständigkeiten — die Umsetzung ergänzt eine (`zustaendigkeit`), dokumentiert im Kernel-README.
+5. **H-04 (Events „genau einmal") — geklärt:** Kernel §2/§8 definiert Outbox mit At-least-once und idempotenten Konsumenten. „Genau einmal veröffentlicht" (M01 AC 9) heißt: genau ein Outbox-Eintrag.
+6. **H-05 (`vertragstyp_id`) — geklärt:** Muster A schreibt Referenz auf die konkrete **Version** vor („niemals `stamm_id`", Kernel §4); die Stichtagsauflösung läuft über `mitarbeiter_historie`.
+7. **H-06 (Kostenstellen/-träger) — entschieden:** Der Kernel führt beide nicht — sie bleiben wie korrigiert in M01/M02.
+8. **Weiter offen:** M14/M16 (Wachbuch-Lesezugriff für M19, Benachrichtigungsversand), M15, M17, M18 liegen nicht vor.
+
+### Nachtrag: neue Befunde aus den nachgereichten Dokumenten
+
+| Nr. | Fundstelle | Befund | Maßnahme |
+|---|---|---|---|
+| N-01 | Kernel §7 ↔ M13/M08 | Die Porttabelle des Kernels führt den `RessourcenPort` (M13) nicht, obwohl M08 laut M13 R-04 `darf_ausstempeln()` vor jeder Abmeldung aufrufen muss; auch die M08-Voraussetzungen nennen ihn nicht. | **Änderungsantrag Kernel** (§7 ergänzen) + M08-Header; Kernel selbst wurde vereinbarungsgemäß nicht angefasst („Änderungen nur über Änderungsantrag"). |
+| N-02 | M13 Header | `WiedervorlagePort` fehlte trotz R-09 (Wiedervorlage 30 Tage vor Prüffrist) — gleiche Befundklasse wie D-10. | Header korrigiert. |
+| N-03 | Kernel §8 ↔ M08 | Kernel-Eventname `m08.zeiterfassung.fehlt.v1` vs. `m08.erfassung.fehlt.v1` im (von uns ergänzten) M08-Events-Abschnitt. | M08 an den Kernel-Namen angeglichen. |
+| N-04 | Kernel §2 | Vorgabe Python 3.12 — Build-Umgebung stellt 3.11. | Code 3.11-kompatibel gehalten; Abweichung im README (DoD Nr. 8). |
 
 ---
 

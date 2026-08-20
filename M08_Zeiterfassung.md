@@ -59,7 +59,7 @@ class ZeitdatenDTO:
 ```
 
 ## 4. Ausgelöste Events
-`m08.erfassung.fehlt.v1` (nach Karenz, R-05 — Versand über M16) · `m08.schicht.automatisch_geschlossen.v1` (R-06) · `m08.dak.eskaliert.v1` (R-09) · `m08.pruef_inbox.eintrag_erstellt.v1`
+`m08.zeiterfassung.fehlt.v1` (nach Karenz, R-05 — Versand über M16; Name gemäß Kernel §8) · `m08.zeiterfassung.gestartet.v1` (Kernel §8) · `m08.schicht.automatisch_geschlossen.v1` (R-06) · `m08.dak.eskaliert.v1` (R-09) · `m08.pruef_inbox.eintrag_erstellt.v1`
 
 ## 5. Fachregeln
 - **R-01** Die drei Erfassungswege sind fachlich gleichwertig und erzeugen identische Datensätze. Unterschiedlich ist nur die Herkunft.
