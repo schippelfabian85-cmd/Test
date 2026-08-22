@@ -1,9 +1,0 @@
-[project]
-name = "sicherheits-erp"
-version = "0.1.0"
-description = "Modulare Branchenlösung Sicherheitsgewerbe — Umsetzung nach den Modulspezifikationen M01–M20"
-requires-python = ">=3.11"
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["src"]
